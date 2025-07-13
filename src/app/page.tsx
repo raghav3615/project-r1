@@ -1,22 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, MessageCircle, FileText, CheckSquare, Folder, Clock, ChevronDown, Calendar, Plus, ArrowUp, User } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Search, MessageCircle, FileText, CheckSquare, Folder, Clock, Plus, Settings, Trash2, Navigation, Download, Upload, MoreVertical } from 'lucide-react';
+import { ChatProvider, useChat } from '@/hooks/useChat';
+import { Chat } from '@/types';
+import { ChatMessages } from '@/components/ChatMessages';
+import { ChatInput } from '@/components/ChatInput';
+import { ModelSelector } from '@/components/ModelSelector';
+import { SettingsModal } from '@/components/SettingsModal';
+import { ChatNavigator } from '@/components/ChatNavigator';
+import { exportChats, importChats, exportChatAsMarkdown } from '@/lib/export';
+import { DEFAULT_MODEL } from '@/lib/models';
 
-const R1UI = () => {
-  const [selectedModel, setSelectedModel] = useState('R1');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const historyItems = [
-    { title: "Growing Your Presence on X", date: "Yesterday" },
-    { title: "Swachh Bharat Mission Overview", date: "April" },
-    { title: "Gamifying Wikipedia Editor Community", date: "April" },
-    { title: "Gamifying Wikipedia Editor Community", date: "April" },
-    { title: "Gamifying Wikipedia Editor Community", date: "April" },
-    { title: "Raghav Dadlhich: Engineer, Entrepreneur", date: "May" },
-    { title: "Stalkl: Time-Tracking Browser Extension", date: "May" },
-    { title: "Caffeine: How Much is Too Much?", date: "May" }
-  ];
+function ChatInterface() {
+  const { chats, currentChat, createChat, selectChat, deleteChat } = useChat();
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showNavigator, setShowNavigator] = useState(false);
+  const [showChatMenu, setShowChatMenu] = useState<string | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   const sidebarItems = [
     { icon: Search, label: "Search", shortcut: "Ctrl+K" },
@@ -27,24 +29,112 @@ const R1UI = () => {
     { icon: Clock, label: "History" }
   ];
 
+  const handleNewChat = () => {
+    createChat('New Chat', selectedModel);
+  };
+
+  const handleExportChats = () => {
+    exportChats(chats);
+  };
+
+  const handleImportChats = () => {
+    importFileRef.current?.click();
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const importedChats = await importChats(file);
+      // TODO: Add imported chats to current chats (merge or replace)
+      console.log('Imported chats:', importedChats);
+      alert(`Successfully imported ${importedChats.length} chats!`);
+    } catch (error) {
+      alert('Failed to import chats. Please check the file format.');
+    }
+
+    // Reset file input
+    if (importFileRef.current) {
+      importFileRef.current.value = '';
+    }
+  };
+
+  const handleExportChatAsMarkdown = (chat: Chat) => {
+    exportChatAsMarkdown(chat);
+    setShowChatMenu(null);
+  };
+
+  const formatChatDate = (date: Date) => {
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Group chats by date
+  const groupedChats = chats.reduce((acc, chat) => {
+    const dateKey = formatChatDate(chat.updatedAt);
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(chat);
+    return acc;
+  }, {} as Record<string, typeof chats>);
+
   return (
     <div className="flex h-screen bg-neutral-950 text-white">
       {/* Sidebar */}
       <div className="w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col">
         {/* Logo */}
         <div className="p-4 border-b border-gray-700">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <div className="w-4 h-4 bg-gray-900 rounded-full"></div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-gray-900 rounded-full"></div>
+              </div>
+              <span className="text-xl font-semibold">R1</span>
             </div>
-            <span className="text-xl font-semibold">R1</span>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={handleExportChats}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Export All Chats"
+                disabled={chats.length === 0}
+              >
+                <Download size={16} />
+              </button>
+              <button
+                onClick={handleImportChats}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Import Chats"
+              >
+                <Upload size={16} />
+              </button>
+              <button
+                onClick={handleNewChat}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="New Chat"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
           </div>
+          {/* Hidden file input for import */}
+          <input
+            type="file"
+            ref={importFileRef}
+            onChange={handleFileImport}
+            accept=".json"
+            className="hidden"
+          />
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-1 ">
-          {/* Make sidebar items section bigger */}
-          <div className="flex-1 space-y-1.5 pb-2">
+        <nav className="flex-1 p-1 flex flex-col">
+          {/* Navigation items */}
+          <div className="space-y-1.5 pb-4">
             {sidebarItems.map((item, index) => (
               <div
                 key={index}
@@ -63,128 +153,175 @@ const R1UI = () => {
             ))}
           </div>
 
-          {/* Make history section smaller */}
-          <div className="mb-4">
-            <div className="space-y-0.5 text-sm">
-              <div className="font-medium text-gray-400 mb-2">Yesterday</div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Growing Your Presence on X
-              </div>
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-2 text-sm">
+              {Object.entries(groupedChats).map(([dateKey, dateChats]) => (
+                <div key={dateKey}>
+                  <div className="font-medium text-gray-400 mb-2 px-2">{dateKey}</div>
+                  {dateChats.map((chat) => (
+                    <div
+                      key={chat.id}
+                      className={`flex items-center group p-2 hover:bg-gray-700 rounded cursor-pointer transition-colors relative ${
+                        currentChat?.id === chat.id ? 'bg-gray-700' : ''
+                      }`}
+                      onClick={() => selectChat(chat.id)}
+                    >
+                      <div className="flex-1 truncate">
+                        <div className="text-gray-300 truncate">
+                          {chat.title}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {chat.messages.length} messages • {chat.model}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowChatMenu(showChatMenu === chat.id ? null : chat.id);
+                          }}
+                          className="p-1 hover:bg-gray-600 rounded transition-all"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteChat(chat.id);
+                          }}
+                          className="p-1 hover:bg-gray-600 rounded transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      {/* Chat Context Menu */}
+                      {showChatMenu === chat.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setShowChatMenu(null)}
+                          />
+                          <div className="absolute right-0 top-8 z-20 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 min-w-48">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExportChatAsMarkdown(chat);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                            >
+                              <Download size={14} />
+                              <span>Export as Markdown</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // TODO: Implement duplicate chat
+                                setShowChatMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                            >
+                              <FileText size={14} />
+                              <span>Duplicate Chat</span>
+                            </button>
+                            <hr className="border-gray-700 my-1" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteChat(chat.id);
+                                setShowChatMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-red-600 transition-colors flex items-center space-x-2 text-red-400"
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete Chat</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
               
-              <div className="font-medium text-gray-400 mb-2 mt-4">April</div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Swachh Bharat Mission Overview
-              </div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Gamifying Wikipedia Editor Community
-              </div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Gamifying Wikipedia Editor Community
-              </div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Gamifying Wikipedia Editor Community
-              </div>
-              
-              <div className="font-medium text-gray-400 mb-2 mt-4">May</div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Raghav Dadlhich: Engineer, Entrepreneur
-              </div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Stalkl: Time-Tracking Browser Extension
-              </div>
-              <div className="text-gray-300 p-1.5 hover:bg-gray-700 rounded cursor-pointer truncate">
-                Caffeine: How Much is Too Much?
-              </div>
-              
-              <div className="text-blue-400 p-1.5 hover:bg-gray-700 rounded cursor-pointer mt-3">
-                See all
-              </div>
+              {chats.length === 0 && (
+                <div className="text-gray-500 text-center p-4">
+                  No conversations yet.
+                  <br />
+                  Start a new chat!
+                </div>
+              )}
             </div>
           </div>
         </nav>
-
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-          {/* Grok Logo */}
-          <div className="mb-12">
+        {/* Header */}
+        <div className="border-b border-gray-800 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-lg font-semibold">
+                {currentChat?.title || 'R1 Assistant'}
+              </h1>
+              {currentChat && (
+                <span className="text-sm text-gray-400">
+                  {currentChat.messages.length} messages
+                </span>
+              )}
+            </div>
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                <div className="w-6 h-6 bg-gray-900 rounded-full"></div>
-              </div>
-              <span className="text-4xl font-bold">R1</span>
+              <ModelSelector
+                selectedModel={selectedModel}
+                onModelChange={setSelectedModel}
+              />
+              <button
+                onClick={() => setShowNavigator(true)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Chat Navigator"
+                disabled={!currentChat || currentChat.messages.length === 0}
+              >
+                <Navigation size={18} />
+              </button>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Settings"
+              >
+                <Settings size={18} />
+              </button>
             </div>
-          </div>
-
-          {/* Search Container */}
-          <div className="w-full max-w-2xl">
-            <div className="relative bg-gray-950 rounded-xl border border-gray-700 p-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="What do you want to know?"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
-                    <Plus size={20} className="text-gray-400" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
-                    <Search size={20} className="text-gray-400" />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Bottom row */}
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center space-x-4">
-                  <button className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors">
-                    <Search size={16} />
-                    <span className="text-sm">DeepSearch</span>
-                    <ChevronDown size={14} />
-                  </button>
-                  <button className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors">
-                    <MessageCircle size={16} />
-                    <span className="text-sm">Think</span>
-                  </button>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-2 text-gray-400">
-                    <span className="text-sm">{selectedModel}</span>
-                    <ChevronDown size={14} />
-                  </div>
-                  <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
-                    <ArrowUp size={16} className="text-gray-400" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Actions */}
-          <div className="mt-8 flex items-center space-x-4">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
-              <Calendar size={16} />
-              <span className="text-sm">Receive a Weekly Sports Update</span>
-              <ChevronDown size={14} />
-            </button>
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-700 hover:bg-gray-800 rounded-lg transition-colors">
-              <CheckSquare size={16} />
-              <span className="text-sm">Schedule Task</span>
-            </button>
           </div>
         </div>
+
+        {/* Chat Messages */}
+        <ChatMessages />
+
+        {/* Chat Input */}
+        <ChatInput onOpenSettings={() => setShowSettings(true)} />
+
+        {/* Settings Modal */}
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+        />
+
+        {/* Chat Navigator */}
+        <ChatNavigator
+          isOpen={showNavigator}
+          onClose={() => setShowNavigator(false)}
+        />
       </div>
     </div>
   );
-};
+}
 
-export default R1UI;
+export default function Home() {
+  return (
+    <ChatProvider>
+      <ChatInterface />
+    </ChatProvider>
+  );
+}

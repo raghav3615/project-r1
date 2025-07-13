@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "R1",
+  title: "Project-R1 | Privacy-First AI Chat",
   description: "Open source, privacy-first AI chatbot that works as a wrapper for Gemini, Llama, DeepSeek and more. Bring your own API keys.",
 };
 
@@ -32,3 +32,4 @@ export default function RootLayout({
     </html>
   );
 }
+
