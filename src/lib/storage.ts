@@ -41,9 +41,10 @@ export const loadChats = (): Chat[] => {
 // Model migration utility
 const migrateModelName = (modelName: string): string => {
   const migrations: Record<string, string> = {
-    'gemini-pro': 'gemini-2.0-flash',
+    'gemini-pro': 'gemini-2.5-flash',
     'gemini-pro-vision': 'gemini-1.5-pro',
-    'gemini-1.5-flash': 'gemini-2.0-flash', // Migrate to newer version
+    'gemini-2.0-flash': 'gemini-2.5-flash', // Migrate to newest version
+    'gemini-1.5-flash': 'gemini-2.5-flash', // Migrate to newest version
   };
   
   return migrations[modelName] || modelName;

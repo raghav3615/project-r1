@@ -10,7 +10,7 @@ interface ChatNavigatorProps {
   onClose: () => void;
 }
 
-export function ChatNavigator({ isOpen, onClose }: ChatNavigatorProps) {
+export const ChatNavigator = React.memo(function ChatNavigator({ isOpen, onClose }: ChatNavigatorProps) {
   const { currentChat } = useChat();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['recent']));
@@ -212,4 +212,4 @@ export function ChatNavigator({ isOpen, onClose }: ChatNavigatorProps) {
       </div>
     </>
   );
-}
+});

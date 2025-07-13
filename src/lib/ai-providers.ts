@@ -163,23 +163,66 @@ export class GoogleProvider extends AIProvider {
         throw new Error(`Google API error: ${response.status} - ${error}`);
       }
 
+      const data = await response.json();
+      console.log('GoogleProvider: Full API response:', JSON.stringify(data, null, 2));
+      
+      // Check for various possible response structures
+      let content = '';
+      
+      // Handle array of response chunks (streaming format)
+      if (Array.isArray(data)) {
+        console.log('GoogleProvider: Processing array response format');
+        for (const chunk of data) {
+          if (chunk.candidates && chunk.candidates.length > 0) {
+            const candidate = chunk.candidates[0];
+            if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+              const chunkText = candidate.content.parts[0].text || '';
+              content += chunkText;
+            }
+          }
+        }
+      } 
+      // Handle single response object
+      else if (data.candidates && data.candidates.length > 0) {
+        const candidate = data.candidates[0];
+        console.log('GoogleProvider: First candidate:', JSON.stringify(candidate, null, 2));
+        
+        // Check if content was blocked by safety filters
+        if (candidate.finishReason === 'SAFETY') {
+          throw new Error('Response was blocked by Google\'s safety filters. Please try a different message.');
+        }
+        
+        if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+          content = candidate.content.parts[0].text || '';
+        } else if (candidate.text) {
+          content = candidate.text;
+        } else if (candidate.output) {
+          content = candidate.output;
+        }
+      } 
+      // Handle other response formats
+      else if (data.text) {
+        content = data.text;
+      } else if (data.content) {
+        content = data.content;
+      }
+      
+      // Check for blocked content or other errors
+      if (data.promptFeedback?.blockReason) {
+        throw new Error(`Message blocked by Google API: ${data.promptFeedback.blockReason}`);
+      }
+      
+      console.log('GoogleProvider: Extracted content:', content);
+      console.log('GoogleProvider: Content length:', content.length);
+
       if (streamCallback) {
         console.log('GoogleProvider: Starting streaming response');
         
-        // For now, let's disable streaming for Google and use regular response
-        // Google's streaming API has a different format that needs special handling
-        console.log('GoogleProvider: Using regular response (streaming disabled temporarily)');
-        const data = await response.json();
-        const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log('GoogleProvider: Response content length:', content.length);
-        
         // Simulate streaming by sending the content in chunks
-        if (content) {
+        if (content && content.trim()) {
           const words = content.split(' ');
-          let accumulatedText = '';
           
           for (let i = 0; i < words.length; i++) {
-            accumulatedText += (i > 0 ? ' ' : '') + words[i];
             streamCallback.onToken(words[i] + (i < words.length - 1 ? ' ' : ''));
             
             // Small delay to simulate streaming
@@ -191,14 +234,16 @@ export class GoogleProvider extends AIProvider {
           streamCallback.onComplete(content);
           return content;
         } else {
-          throw new Error('No content received from Google API');
+          console.error('GoogleProvider: No content found in response structure');
+          throw new Error('No content received from Google API. Response structure: ' + JSON.stringify(data));
         }
       } else {
-        console.log('GoogleProvider: Using non-streaming response');
-        const data = await response.json();
-        const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log('GoogleProvider: Response content length:', content.length);
-        return content;
+        if (content && content.trim()) {
+          return content;
+        } else {
+          console.error('GoogleProvider: No content found in response structure');
+          throw new Error('No content received from Google API. Response structure: ' + JSON.stringify(data));
+        }
       }
     } catch (error) {
       console.error('GoogleProvider: Request failed:', error);

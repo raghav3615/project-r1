@@ -12,7 +12,7 @@ interface MessageProps {
   isLast?: boolean;
 }
 
-export function Message({ message, isLast }: MessageProps) {
+export const Message = React.memo(function Message({ message, isLast }: MessageProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = React.useState(false);
   
@@ -152,4 +152,4 @@ export function Message({ message, isLast }: MessageProps) {
       </div>
     </div>
   );
-}
+});

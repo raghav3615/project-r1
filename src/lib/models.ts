@@ -41,9 +41,9 @@ export const SUPPORTED_MODELS: AIModel[] = [
   
   // Google Models
   {
-    id: 'gemini-2.0-flash',
-    name: 'gemini-2.0-flash',
-    displayName: 'Gemini 2.0 Flash',
+    id: 'gemini-1.5-flash',
+    name: 'gemini-1.5-flash',
+    displayName: 'Gemini 1.5 Flash',
     provider: 'google',
     capabilities: {
       chat: true,
@@ -55,9 +55,9 @@ export const SUPPORTED_MODELS: AIModel[] = [
     contextWindow: 1048576, // 1M tokens
   },
   {
-    id: 'gemini-1.5-pro',
-    name: 'gemini-1.5-pro',
-    displayName: 'Gemini 1.5 Pro',
+    id: 'gemini-2.5-flash',
+    name: 'gemini-2.5-flash',
+    displayName: 'Gemini 2.5 Flash',
     provider: 'google',
     capabilities: {
       chat: true,

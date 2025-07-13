@@ -17,7 +17,7 @@ interface UploadedFile {
   type: 'image' | 'document';
 }
 
-export function ChatInput({ disabled, onOpenSettings }: ChatInputProps) {
+export const ChatInput = React.memo(function ChatInput({ disabled, onOpenSettings }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [hasAPIKeys, setHasAPIKeys] = useState(false);
@@ -264,4 +264,4 @@ export function ChatInput({ disabled, onOpenSettings }: ChatInputProps) {
       </form>
     </div>
   );
-}
+});

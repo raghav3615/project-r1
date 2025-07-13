@@ -319,9 +319,5 @@ function ChatInterface() {
 }
 
 export default function Home() {
-  return (
-    <ChatProvider>
-      <ChatInterface />
-    </ChatProvider>
-  );
+  return <ChatInterface />;
 }

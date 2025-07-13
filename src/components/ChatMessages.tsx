@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Message } from './Message';
 import { useChat } from '@/hooks/useChat';
 
-export function ChatMessages() {
+export const ChatMessages = React.memo(function ChatMessages() {
   const { currentChat, isLoading, error } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -14,6 +14,12 @@ export function ChatMessages() {
 
   useEffect(() => {
     scrollToBottom();
+  }, [currentChat?.messages?.length]); // Only scroll when message count changes
+
+  // Memoize the messages to prevent unnecessary re-renders
+  const memoizedMessages = useMemo(() => {
+    if (!currentChat?.messages) return [];
+    return currentChat.messages;
   }, [currentChat?.messages]);
 
   if (!currentChat) {
@@ -84,11 +90,11 @@ export function ChatMessages() {
           </div>
         )}
         
-        {currentChat.messages.map((message, index) => (
+        {memoizedMessages.map((message, index) => (
           <Message
             key={message.id}
             message={message}
-            isLast={index === currentChat.messages.length - 1}
+            isLast={index === memoizedMessages.length - 1}
           />
         ))}
         
@@ -96,4 +102,4 @@ export function ChatMessages() {
       </div>
     </div>
   );
-}
+});
