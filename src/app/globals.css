@@ -1,43 +1,15 @@
 @import "tailwindcss";
 
-/* Message highlight animation */
-.highlight-message {
-  animation: highlight-pulse 2s ease-in-out;
-  border: 2px solid transparent;
-}
-
-@keyframes highlight-pulse {
-  0%, 100% { 
-    border-color: rgb(250 204 21 / 0);
-    box-shadow: 0 0 0 0 rgb(250 204 21 / 0);
-  }
-  50% { 
-    border-color: rgb(250 204 21 / 0.75);
-    box-shadow: 0 0 0 4px rgb(250 204 21 / 0.25);
-  }
-}
-
-/* Custom scrollbar for webkit browsers */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background-color: rgb(31 41 55);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgb(75 85 99);
-  border-radius: 9999px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(107 114 128);
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,71 +19,8 @@
   }
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1a1a1a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #6a6a6a;
-}
-
-/* Gradient text animation */
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.gradient-animate {
-  background-size: 200% 200%;
-  animation: gradient 3s ease infinite;
-}
-
-/* Glass morphism effect */
-.glass {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-/* Button hover effects */
-.btn-hover {
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  font-family: Arial, Helvetica, sans-serif;
 }
